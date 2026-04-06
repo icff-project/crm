@@ -1,18 +1,18 @@
 <template>
   <div class="flex flex-col gap-5.5">
     <div
-      class="flex items-center gap-2 text-base bg-surface-gray-2 rounded py-2 px-2.5"
+      class="flex items-center justify-between gap-2 text-base bg-surface-gray-2 rounded py-2 px-2.5 overflow-x-auto max-w-full"
     >
       <Draggable
         v-if="tabs.length && tabs[tabIndex].label"
         :list="tabs"
         item-key="name"
-        class="flex items-center gap-2"
+        class="flex items-center gap-2 w-full overflow-auto"
         @end="(e) => (tabIndex = e.newIndex)"
       >
         <template #item="{ element: tab, index: i }">
           <div
-            class="flex items-center gap-2 cursor-pointer rounded"
+            class="flex items-center gap-2 cursor-pointer rounded shrink-0"
             :class="[
               tabIndex == i
                 ? 'text-ink-gray-9 bg-surface-white shadow-sm'
@@ -237,16 +237,15 @@ const restrictedFieldTypes = [
   'Section Break',
   'Column Break',
   'Geolocation',
-  'Attach',
   'Attach Image',
-  'HTML',
   'Signature',
 ]
 
 const { getFields } = getMeta(props.doctype)
 
 const fields = computed(() => {
-  const _fields = getFields() || []
+  const _fields =
+    getFields({ restrictNoValueFields: false, restrictedFieldTypes }) || []
   if (!_fields.length) return []
 
   let existingFields = []
@@ -263,7 +262,6 @@ const fields = computed(() => {
     .filter((field) => {
       return (
         !existingFields.find((f) => f.fieldname === field.fieldname) &&
-        !restrictedFieldTypes.includes(field.fieldtype) &&
         (props.onlyRequired ? field.reqd : true)
       )
     })
