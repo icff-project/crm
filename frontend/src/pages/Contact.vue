@@ -123,7 +123,7 @@
       v-model="tabIndex"
       as="div"
       :tabs="tabs"
-      class="flex flex-1 overflow-hidden flex-col [&_[role='tab']]:px-0 [&_[role='tab']]:shrink-0 [&_[role='tablist']]:px-5 [&_[role='tablist']]:min-h-[45px] [&_[role='tablist']]:gap-7.5 [&_[role='tabpanel']:not([hidden])]:flex [&_[role='tabpanel']:not([hidden])]:grow"
+      class="flex flex-1 overflow-hidden flex-col [&_[role='tab']]:px-0 [&_[role='tab']]:shrink-0 [&_[role='tablist']]:px-5 [&_[role='tablist']::-webkit-scrollbar]:h-0 [&_[role='tablist']]:min-h-[45px] [&_[role='tablist']]:gap-7.5 [&_[role='tabpanel']:not([hidden])]:flex [&_[role='tabpanel']:not([hidden])]:grow"
     >
       <template #tab-item="{ tab, selected }">
         <button
@@ -207,7 +207,7 @@ import {
   Dropdown,
   toast,
 } from 'frappe-ui'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
 
@@ -233,9 +233,14 @@ const {
   document: contact,
   permissions,
   scripts,
+  triggerOnRender,
 } = useDocument('Contact', props.contactId)
 
 const canDelete = computed(() => permissions.data?.permissions?.delete || false)
+
+onMounted(async () => {
+  if (contact.doc) await triggerOnRender()
+})
 
 const breadcrumbs = computed(() => {
   let items = [{ label: __('Contacts'), route: { name: 'Contacts' } }]

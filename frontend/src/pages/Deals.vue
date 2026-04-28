@@ -244,14 +244,14 @@
     v-model="showNoteModal"
     :note="note"
     doctype="CRM Deal"
-    :doc="docname"
+    :docname="docname"
   />
   <TaskModal
     v-if="showTaskModal"
     v-model="showTaskModal"
     :task="task"
     doctype="CRM Deal"
-    :doc="docname"
+    :docname="docname"
   />
 </template>
 
