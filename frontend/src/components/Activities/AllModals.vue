@@ -1,18 +1,20 @@
 <template>
   <TaskModal
+    v-if="showTaskModal"
     v-model="showTaskModal"
     v-model:reloadTasks="activities"
     :task="task"
     :doctype="doctype"
-    :doc="doc?.name"
+    :docname="doc?.name"
     @after="redirect('tasks')"
   />
   <NoteModal
+    v-if="showNoteModal"
     v-model="showNoteModal"
     v-model:reloadNotes="activities"
     :note="note"
     :doctype="doctype"
-    :doc="doc?.name"
+    :docname="doc?.name"
     @after="redirect('notes')"
   />
   <CallLogModal
