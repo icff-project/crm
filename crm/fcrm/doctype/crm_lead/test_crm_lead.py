@@ -442,6 +442,21 @@ class TestCRMLead(IntegrationTestCase):
 		self.assertEqual(org.organization_name, "API Test Corp")
 		self.assertEqual(org.annual_revenue, 300000)
 
+	def test_cannot_convert_lost_lead_to_deal(self):
+		"""Lost leads cannot be converted to deals."""
+		if not frappe.db.exists("CRM Lost Reason", "Not interested"):
+			frappe.get_doc({"doctype": "CRM Lost Reason", "lost_reason": "Not interested"}).insert()
+
+		for status in ("Junk", "Unqualified"):
+			with self.subTest(status=status):
+				lead = create_lead(first_name=status, status=status, lost_reason="Not interested")
+				with self.assertRaisesRegex(
+					frappe.ValidationError, f"Cannot convert a lead with status {status}"
+				):
+					convert_to_deal(lead=lead.name)
+				lead.reload()
+				self.assertFalse(lead.converted)
+
 	def test_convert_to_deal_api_with_existing_records(self):
 		"""Test convert_to_deal API with existing contact and organization parameters"""
 		# Create existing contact
@@ -512,6 +527,22 @@ class TestCRMLead(IntegrationTestCase):
 		self.assertEqual(deal.annual_revenue, 750000)
 		self.assertEqual(deal.job_title, "CEO")
 
+	def test_no_of_employees_propagated_to_organization_on_conversion(self):
+		"""Test that no_of_employees on lead is copied to the organization created on conversion"""
+		lead = create_lead(
+			first_name="Employees",
+			last_name="Test",
+			email="employeestest@example.com",
+			organization="Employees Test Inc",
+			no_of_employees="201-500",
+		)
+
+		deal_name = lead.convert_to_deal()
+		deal = frappe.get_doc("CRM Deal", deal_name)
+
+		org = frappe.get_doc("CRM Organization", deal.organization)
+		self.assertEqual(org.no_of_employees, "201-500")
+
 	def test_custom_fields_copied_to_deal_by_label(self):
 		"""Custom Lead fields map to matching custom Deal fields."""
 		create_lead_deal_custom_fields()
@@ -561,6 +592,16 @@ class TestCRMLead(IntegrationTestCase):
 		lead = create_lead(first_name="Override", lead_owner="crm.user1@example.com")
 		assign_add({"assign_to": ["crm.user2@example.com"], "doctype": "CRM Lead", "name": lead.name})
 		self.assertEqual(frappe.db.get_value("CRM Lead", lead.name, "lead_owner"), "crm.user2@example.com")
+
+	def test_negative_currency_fields_rejected(self):
+		"""Test that Currency fields reject negative values"""
+		for fieldname in ("annual_revenue", "total", "net_total"):
+			with self.subTest(fieldname=fieldname), self.assertRaises(frappe.NonNegativeError):
+				create_lead(
+					first_name="Negative",
+					email=f"negative.{fieldname}@example.com",
+					**{fieldname: -100},
+				)
 
 
 def create_lead(**kwargs):
